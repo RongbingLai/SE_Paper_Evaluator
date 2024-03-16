@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from agents.paper_evaluate_agent import get_paper
+from agents.paper_evaluate_agent import evaluate_paper
 
 if __name__ == "__main__":
     evaluation_aspects = [
@@ -28,6 +28,6 @@ if __name__ == "__main__":
     }
 
     paper_title = "paper for evaluation"
-    evaluation_results = get_paper(paper_title, evaluation_aspects, questions)
+    evaluation_results = evaluate_paper(paper_title, evaluation_aspects, questions)
 
     print(evaluation_results)

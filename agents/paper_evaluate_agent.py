@@ -7,7 +7,7 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain_core.prompts import PromptTemplate
-from tools import get_paper 
+from tools import get_relevant_section 
 
 def evaluate_paper(title: str, aspects: list, questions: dict) -> dict:
     llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
@@ -27,7 +27,7 @@ def evaluate_paper(title: str, aspects: list, questions: dict) -> dict:
     tools_for_agent = [
         Tool(
             name="Retrieve Criteria Paper",
-            func=get_paper, 
+            func=get_relevant_section, 
             description="Retrieves relevant sections from criteria papers stored locally.",
         )
     ]
