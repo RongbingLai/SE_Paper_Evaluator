@@ -1,8 +1,8 @@
 import os
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFLoader
 
 CRITERIA_PAPERS_DIRECTORY = "/Users/crystalalice/Desktop/ICSHP_Research/Criteria_papers"
 
