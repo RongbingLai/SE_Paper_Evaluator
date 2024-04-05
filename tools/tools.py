@@ -1,7 +1,7 @@
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-from langchain.llms import OpenAI
+from langchain_openai import OpenAI
 from langchain.tools import tool
 
 @tool
@@ -13,7 +13,7 @@ def get_relevant_section(question: str):
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local("faiss_index_criteria", embeddings, allow_dangerous_deserialization=True)
     retriever = vectorstore.as_retriever()
-    qa = RetrievalQA(llm=OpenAI(), retriever=retriever)
+    qa = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="stuff", retriever=retriever)
 
-    res = qa.run(question)
+    res = qa.invoke(question)
     return res
