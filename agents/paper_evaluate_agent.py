@@ -7,28 +7,29 @@ from langchain.agents import create_react_agent, AgentExecutor
 from langchain_openai import ChatOpenAI
 from langchain import hub
 from langchain_core.prompts import PromptTemplate
-from tools import get_relevant_section 
+from tools.tools import get_relevant_section
 
-def evaluate_paper(title: str, aspects: list, questions: dict) -> dict:
+def evaluate_paper(content: str, questions: dict) -> dict:
     llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 
-    evaluation_template = """
-    Evaluate the research paper titled "{title}" based on the following aspects and questions:
-    {evaluation_questions}
-    """
+    evaluation_questions = "\n".join(questions)
 
-    evaluation_questions = "\n".join([f"{aspect}: {questions[aspect]}" for aspect in aspects])
+    evaluation_template = """
+        Evaluate the research paper {content} based on the following aspects and questions:
+        {evaluation_questions}. In your final answer, for each aspect, write a paragraph to
+        evaluate the quality from this aspect. 
+    """
 
     prompt_template = PromptTemplate(
         template=evaluation_template,
-        input_variables=["title", "evaluation_questions"]
+        input_variables=["content", "evaluation_questions"]
     )
 
     tools_for_agent = [
         Tool(
             name="Retrieve Criteria Paper",
             func=get_relevant_section, 
-            description="Retrieves relevant sections from criteria papers stored locally.",
+            description="Retrieves relevant sections from criteria papers for evaluation stored locally.",
         )
     ]
 
@@ -38,8 +39,7 @@ def evaluate_paper(title: str, aspects: list, questions: dict) -> dict:
 
     result = agent_executor.invoke(
         input={
-            "title": title,
-            "evaluation_questions": evaluation_questions
+            "input": prompt_template.format_prompt(content=content, evaluation_questions=evaluation_questions)
         }
     )
 
