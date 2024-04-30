@@ -1,11 +1,10 @@
 import os
-import time
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 
-CRITERIA_PAPERS_DIRECTORY = "/Users/crystalalice/Desktop/ICSHP_Research/Criteria_papers"
+CRITERIA_PAPERS_DIRECTORY = "/Users/crystalalice/Desktop/ICSHP_Research/criteria_papers_for_database"
 
 
 def save_and_index_papers():
