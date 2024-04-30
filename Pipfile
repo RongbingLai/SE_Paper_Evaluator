@@ -11,8 +11,9 @@ openai = "*"
 tiktoken = "*"
 pypdf = "*"
 faiss-cpu = "*"
-dotenv = "*"
 langchain-openai = "*"
+pdfminer = "*"
+papermage = "*"
 
 [dev-packages]
 
