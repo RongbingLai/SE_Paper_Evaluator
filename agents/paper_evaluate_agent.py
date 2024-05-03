@@ -114,7 +114,7 @@ def evaluate_paper():
         New input: {input}
         {agent_scratchpad}
     """
-    
+
     # list of tools
     tools = [
         Tool(
@@ -137,7 +137,9 @@ def evaluate_paper():
 
     eval_questions_str = "\n".join(f"{key}: {value}" for key, value in EVAL_QUESTIONS)
 
-    initial_input = f"Evaluate the manuscript. The path of the manuscript is {PAPER_PATH}"
+    initial_input = (
+        f"Evaluate the manuscript. The path of the manuscript is {PAPER_PATH}"
+    )
 
     llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 
@@ -163,7 +165,13 @@ def evaluate_paper():
         | output_parser
     )
 
-    agent_chain = AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True, handle_parsing_errors=True)
+    agent_chain = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        memory=memory,
+        verbose=True,
+        handle_parsing_errors=True,
+    )
 
     agent_chain.invoke(
         {
