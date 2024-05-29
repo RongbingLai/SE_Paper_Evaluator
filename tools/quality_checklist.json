@@ -1,0 +1,77 @@
+{
+    "Research Question": [
+        {
+            "Question": "In the research question, what, precisely, does the author claim to contribute?",
+            "Subquestions": [
+                "What does 'contribution' mean in the context of this research?",
+                "How is 'precisely' interpreted in terms of research scope and focus?"
+            ]
+        },
+        {
+            "Question": "Why should the reader care about the research question?",
+            "Subquestions": [
+                "What criteria determine whether a research question is impactful or significant in Software Engineering?"
+            ]
+        }
+    ],
+    "Research Result": [
+        {
+            "Question": "Is the result concrete and specific?",
+            "Subquestions": [
+                "How do we define 'concrete' results in software engineering research?",
+                "What are the criteria for 'specific' results in academic papers?"
+            ]
+        }
+    ],
+    "Research Methodology": [
+        {
+            "Question": "What methodology is used in the research?",
+            "Subquestions": [
+                "What kinds of 'methodology' are there in software engineering research?",
+                "How is a methodology viewed as appropriate for a specific research question?"
+            ]
+        }
+    ],
+    "Research Validation": [
+        {
+            "Question": "What evidence is provided to support the claim?",
+            "Subquestions": [
+                "What defines 'evidence' in software engineering research?",
+                "How is evidence used to support claims in academic contexts?"
+            ]
+        },
+        {
+            "Question": "Which type of evidence does the research provide?",
+            "Subquestions": [
+                "What are the different types of evidence commonly recognized in software engineering research?"
+            ]
+        },
+        {
+            "Question": "Does it meet the usual standard of the subdiscipline?",
+            "Subquestions": [
+                "What are the 'usual standards' for validation in software engineering field?"
+            ]
+        },
+        {
+            "Question": "Is the evaluation described clearly and accurately?",
+            "Subquestions": [
+                "What does 'clear' and 'accurate' evaluation mean in the context of research papers?"
+            ]
+        },
+        {
+            "Question": "Is the evidence and validation related to the claim?",
+            "Subquestions": [
+                "How should 'relatedness' between evidence and claims be defined and assessed?"
+            ]
+        }
+    ],
+    "Research Strategy": [
+        {
+            "Question": "Does the author use a good combination of research question, methodology, result, and validation types?",
+            "Subquestions": [
+                "What defines a 'good combination' of research elements in a software engineering research?",
+                "How do these elements interconnect to form a coherent research strategy?"
+            ]
+        }
+    ]
+}
