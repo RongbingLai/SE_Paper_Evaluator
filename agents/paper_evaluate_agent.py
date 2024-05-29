@@ -1,174 +1,137 @@
 from langchain_core.tools import Tool
 from langchain.agents import AgentExecutor
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain.tools.render import render_text_description
-from langchain.agents.output_parsers import ReActSingleInputOutputParser
-from langchain.agents.format_scratchpad import format_log_to_str
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.tools import StructuredTool
+from langchain.agents import create_react_agent
 from tools.tools import (
     generate_review,
     fetch_all_section_titles,
-    fetch_section_content_by_titles,
+    get_openreview_reviews
 )
-from langchain.memory import ConversationBufferMemory
 
-PAPER_PATH = "/Users/crystalalice/Desktop/ICSHP_Research/SE_paper/Software_Documentation_Issues_Unveiled.pdf"
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-EVAL_QUESTIONS = [
-    (
-        "research question",
-        "In the research question, what, precisely, does the author claim to contribute?",
-    ),
-    ("research question", "What larger question does this address?"),
-    ("research result", "What, specifically, is the research result?"),
-    ("research result", "How can readers apply this result?"),
-    ("research result", "Is the result concrete and specific?"),
-    ("research method", "What research method is used?"),
-    ("research validation", "What evidence is presented to support the claim?"),
-    ("research validation", "What kind of evidence is offered?"),
-    ("research validation", "Does it meet the usual standard of the subdiscipline?"),
-    ("research validation", "Is the evaluation described clearly and accurately?"),
-    ("research validation", "Is the evidence and validation related to the claim?"),
-    (
-        "research strategy",
-        "Does the author use a good combination of research question, research result and research validation types?",
-    ),
-]
+# PAPER_PATH = "/Users/crystalalice/Desktop/ICSHP_Research/SE_paper/Software_Documentation_Issues_Unveiled.pdf"
 
-
-# https://www.jmu.edu/uwc/_files/link-library/empirical/findings-results_section_overview.pdf
 def evaluate_paper():
-    # manuscript
-    # Reviewing a manuscript
     template = """
-        You are a Software Engineering Research Paper committee reviewer from a top 
-        conference. Your task is to evaluate the quality of a submission stated in the user 
-        input from the following aspects:
+You are a Software Engineering Research Paper committee reviewer from a top 
+conference. Your task is to evaluate the quality of a submission stated in the user 
+input.
 
-        1. Research Question: the question that the manuscript tries to answer or solve.
+You will be given by a path of the manuscript that needs to be reviewed.
+You are supposed to review the manuscript section by section. You need to complete review all sections
+before you finish. 
 
-        2. Research Results: describes what the authors found when they 
-        analyzed their data. Its primary purpose is to use the data collected to answer the research 
-        question(s) posed in the introduction, even if the findings challenge the hypothesis.
+You should use a tool to fetch all the section titles from the manuscript.
+You should use a tool to generate the review of a section in the manuscript. 
+You should use a tool to get the actual reviews for a research paper that is similar to the manuscript.
 
-        3. Research Methodology: the strategies, processes or techniques utilized in the collection of 
-        data or evidence for analysis in order to uncover new information or create better understanding 
-        of a topic.
+Your action order should be:
+1. Get manuscript section titles
+2. [Optional] Check if there are reviews for similiar research paper and get reviews as reference
+3. For each section, generate review for the section by asking evaluation questions from the list
+4. Repeat step 2-3 until you reviewed all of the sections listed
 
-        4. Research Validation: refers to the process of providing clear and convincing evidence that 
-        research results are sound. Validation seeks to demonstrate that the findings are robust and reliable.
+You need to remember all the section titles so that you are able to review the sections.
+In each section, for every sentence that you think needs to improve, you will need to
+take notes of that sentence. It will be used in your final answer.
 
-        5. Research Strategy: how well the manuscript uses an approriate combination of research
-        question, results, methodology and validation. 
+You have access to the following tools:
+{tools}
 
-        You have a list of questions that top Software Engineering committee reviewers will ask when they
-        review manuscripts. Each question is in the format "Aspect: Question" where Aspect is one of the 
-        research aspects listed above. Here is the list of evaluation questions:
+Follow the exact step-by-step answering process in reviewing the manuscript:
 
-        {eval_questions_str}
+```
+Thought: You should always think what you want to do
+Action: the action to take, should be exactly one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action that will be returned by the tool (DO NOT GENERATE THIS PART)
+... (this Thought/Action/Action Input/Observation can repeat N times)
+```
 
-        You will be given by a path of the manuscript that needs to be reviewed.
-        You are supposed to review the manuscript section by section. 
-        
-        You should use a tool to fetch all the section titles from the manuscript.
-        You should use a tool to fetch the content of a given section in the manuscript.
-        You should use a tool to get the review of a section in the manuscript. 
+When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
 
-        For every sentence that you think needs to improve, you will need to 
-        take notes of that sentence. It will be used in your final answer.
-        
-        You have access to the following tools:
-        {tools}
+```
+Thought: Do I need to use a tool? No
+Final Answer: [your response here]
+```
 
-        Follow the exact step-by-step answering process in reviewing the manuscript:
+Begin!
 
-        ```
-        Thought: You should always think what you want to do
-        Action: the action to take, should be exactly one of [{tool_names}]
-        Action Input: the input to the action
-        Observation: the result of the action
-        ... (this Thought/Action/Action Input/Observation can repeat N times)
-        ```
-
-        When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
-
-        ```
-        Thought: Do I need to use a tool? No
-        Final Answer: [your response here]
-        ```
-
-        In your final answer, you need to include two parts using this format:
-        ```
-        Manuscript Text: [the text that you want to review in the manuscript]
-        Review: [Your evaluation]
-        ... (you should have enough Manuscript Text/Review to cover the review for the whole manuscript)
-        ```
-
-        Begin!
-
-        Previous conversation history:
-        {chat_history}
-
-        New input: {input}
-        {agent_scratchpad}
+Question: {input}
+{agent_scratchpad}
     """
 
     # list of tools
     tools = [
-        Tool(
-            name="Fetch All Section Titles",
-            func=fetch_all_section_titles,
-            description="Use this tool when you want to fetch all section titles from the manuscript. Input should be a string of path to the manuscript.",
-        ),
-        Tool(
-            name="Fetch Section Content by Title",
-            func=fetch_section_content_by_titles,
-            description="Use this tool when you want to fetch the content of a section from the manuscript. Use this tool with arguments like `{``section_title``: str, ``path``: str}` when you need to retrieve the section content. Use double quotes for key and value strings in the format.",
-        ),
+        # Tool(
+        #     name="Fetch All Section Titles",
+        #     func=fetch_all_section_titles,
+        #     description="Use this tool when you want to fetch all section titles from the manuscript. \
+        #                  Input should be a string of path to the manuscript.",
+        # ),
+        # Tool(
+        #     name="Fetch Section Content by Title",
+        #     func=fetch_section_content_by_titles,
+        #     description="Use this tool when you want to fetch the content of a section from the manuscript. \
+        #                  Use this tool with arguments like `{``section_title``: str, ``path``: str}` when you need to \
+        #                  retrieve the section content. Use double quotes for key and value strings in the format.",
+        # ),
         Tool(
             name="Generate Review",
             func=generate_review,
-            description="Use this tool when you want to get a review for a section to the evaluation question. Input should be a string of one of the questions in the evaluation question list and a string of section content that you want to review.",
+            description="Use this tool when you want to generate a review for a section by answering the evaluation question. \
+                         The input of this tool is a section_title that contains a string of section title",
         ),
-        # A tool to get the human reviews of a/a few similar paper(s) (Openreview DB / Use the openrview API) -> The reviews human reviewers left for a manuscript
+        # Tool(
+        #     name="Get Openreview Reviews",
+        #     func=get_openreview_reviews,
+        #     description="Use this tool when you want to get an actual review from a research paper that is similar to the manuscript. \
+        #                  Input should be a string of path to the manuscript.",
+        # )
     ]
 
-    eval_questions_str = "\n".join(f"{key}: {value}" for key, value in EVAL_QUESTIONS)
-
     initial_input = (
-        f"Evaluate the manuscript. The path of the manuscript is {PAPER_PATH}"
+        f"Can you please review the the manuscript located at: '{PAPER_PATH}'?\n\nHere are the section titles of the manuscript:\n{section_titles}"
     )
 
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    print(os.getenv('OPENAI_API_KEY'))
+    llm = OpenAI(temperature=0, model="gpt-3.5-turbo-instruct")
 
-    memory = ConversationBufferMemory(memory_key="chat_history")
+    # memory = ConversationBufferMemory(memory_key="chat_hivstory")
 
-    prompt = PromptTemplate.from_template(template=template).partial(
-        input=initial_input,
-        eval_questions_str=eval_questions_str,
-        tools=render_text_description(list(tools)),
-        tool_names=", ".join([t.name for t in tools]),
-    )
+    # prompt = PromptTemplate.from_template(template=template).partial(
+    #     input=initial_input,
+    #     tools=render_text_description(list(tools)),
+    #     tool_names=", ".join([t.name for t in tools]),
+    # )
+    
+    prompt = PromptTemplate(input_variables=["input", "agent_scratchpad"], template=template)
+    print(type(llm))
+    agent = create_react_agent(
+        llm, tools, prompt, 
+        # output_parser=RobustReActSingleInputOutputParser()
+)
 
-    llm_with_stop = llm.bind(stop=["\nObservation"])
+    # llm_with_stop = llm.bind(stop=["\nObservation"])
 
-    output_parser = ReActSingleInputOutputParser()
+    # output_parser = ReActSingleInputOutputParser()
 
-    agent = (
-        RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
-        )
-        | prompt
-        | llm_with_stop
-        | output_parser
-    )
+    # agent = (
+    #     RunnablePassthrough.assign(
+    #         agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
+    #     )
+    #     | prompt
+    #     | llm_with_stop
+    #     | output_parser
+    # )
 
     agent_chain = AgentExecutor(
         agent=agent,
         tools=tools,
-        memory=memory,
+        # memory=memory,
         verbose=True,
         handle_parsing_errors=True,
     )
