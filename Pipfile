@@ -20,6 +20,7 @@ openreview-py = "*"
 nltk = "*"
 scikit-learn = "*"
 pandas = "*"
+rank-bm25 = "*"
 
 [dev-packages]
 
