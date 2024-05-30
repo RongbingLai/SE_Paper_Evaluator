@@ -9,13 +9,6 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_community.retrievers import BM25Retriever
 import json
 
-def load_path():
-    global path
-    with open('current_path.txt', 'r') as f:
-        path = f.read()
-
-load_path()
-
 
 def _fetch_section_content_by_titles(section_title: str) -> str:
     """

@@ -12,7 +12,10 @@ from tools.tools import (
 import os
 # os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-PAPER_PATH = "/Users/crystalalice/Desktop/ICSHP_Research/SE_paper/Software_Documentation_Issues_Unveiled.pdf"
+def load_path():
+    global path
+    with open('tools/current_path.txt', 'r') as f:
+        path = f.read()
 
 def fetch_all_section_titles() -> list:
     titles = []
@@ -105,16 +108,17 @@ Question: {input}
 
     section_title_list = fetch_all_section_titles()
     section_title_str = (", ").join(section_title_list())
+    load_path()
 
     initial_input = (
-        f"Can you please review the the manuscript located at: '{PAPER_PATH}'?\n\nHere are the section titles of the manuscript:\n{section_title_str}"
+        f"Can you please review the the manuscript located at: '{path}'?\n\nHere are the section titles of the manuscript:\n{section_title_str}"
     )
     print(initial_input)
 
     llm = OpenAI(temperature=0, model="gpt-3.5-turbo-instruct")
     
     prompt = PromptTemplate(input_variables=["input", "agent_scratchpad"], template=template)
-    print(type(llm))
+
     agent = create_react_agent(
         llm, tools, prompt, 
 )
