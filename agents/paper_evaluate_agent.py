@@ -81,8 +81,7 @@ Question: {input}
         Tool(
             name="Generate Review",
             func=generate_review,
-            description="Use this tool when you want to generate a review for a section by answering the evaluation question. \
-                         The input of this tool is a section_title that contains a string of section title",
+            description="Use this tool when you want to generate a review for a section by answering the evaluation question. The input of this tool is a section_title that contains a string of section title",
         ),
         # Tool(
         #     name="Get Openreview Reviews",
