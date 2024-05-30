@@ -7,8 +7,25 @@ from langchain_openai import OpenAI, ChatOpenAI
 from langchain.tools import tool
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_community.retrievers import BM25Retriever
+from papermage.recipes import CoreRecipe
 import json
 
+def load_path():
+    """Loads the local path to the manuscript"""
+    with open('tools/current_path.txt', 'r') as f:
+       global path 
+       path = f.read()
+    return path
+
+def fetch_all_section_titles() -> list:
+    global section_title_list
+    section_title_list = []
+    recipe = CoreRecipe()
+    doc = recipe.run(path)
+    for section in doc.sections:
+        section_title_list.append(section.text)
+
+    return section_title_list
 
 def _fetch_section_content_by_titles(section_title: str) -> str:
     """
@@ -65,8 +82,9 @@ def generate_review(section_title: str) -> str:
     Returns:
         str: The response answering the given question that evaluates the section content.
     """
+    load_path()
     assert section_title in section_title_list, "It seems like you have not provided a correct section titlte. Please use one of the section titles that was provided to you."
-    section_content = _fetch_section_content_by_titles(section_title, path)
+    section_content = _fetch_section_content_by_titles(section_title)
 
     embeddings = OpenAIEmbeddings()
     vectorstore = FAISS.load_local(
@@ -91,8 +109,8 @@ def generate_review(section_title: str) -> str:
         for q in value:
             eval_questions.append(q['Question'])
             for subquestion in q['Subquestions']:
-                result = qa.invoke(subquestion)['result']
-                definitions[subquestion] = _summarize_definition(result)
+                result = qa.invoke(subquestion)['result'] # excceed token length
+                definitions[subquestion] = result
 
     definitions_str = "\n".join(f"{key}: {value}" for key, value in definitions.items())
     questions_str = "\n".join(q for q in eval_questions)
@@ -121,13 +139,6 @@ Your final result must be a JSON blob structured as below:
 
 Please remember to leave comments on all parts of the section that are relevant to the review question.
     """
-    
-    # """ You should make it formatted as below for each part of the section on which you want to leave a comment
-    #     ```
-    #     Manuscript Text: [sentence(s) from the section content that you want to leave comment on]
-    #     Review: [Your comment]
-    #     ```
-    # """
 
     human_template = """
         Section:
@@ -160,11 +171,11 @@ Please remember to leave comments on all parts of the section that are relevant 
     return res.content
 
 
-def _summarize_definition(definition: str) -> str:
-    llm = OpenAI(temperature=0)
-    prompt = f"Summarize the following definition:\n\n{definition}"
-    response = llm.invoke(prompt)
-    return response
+# def _summarize_definition(definition: str) -> str:
+#     llm = OpenAI(temperature=0)
+#     prompt = f"Summarize the following definition:\n\n{definition}"
+#     response = llm.invoke(prompt)
+#     return response
 
 def _get_criteria_questions(section_content: str) -> dict:
     llm = ChatOpenAI(temperature=0)

@@ -3,29 +3,15 @@ from langchain.agents import AgentExecutor
 from langchain_openai import ChatOpenAI, OpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain.agents import create_react_agent
-from papermage.recipes import CoreRecipe
 from tools.tools import (
     generate_review,
+    load_path,
+    fetch_all_section_titles,
     get_openreview_reviews
 )
-
 import os
-# os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-def load_path():
-    global path
-    with open('tools/current_path.txt', 'r') as f:
-        path = f.read()
-
-def fetch_all_section_titles() -> list:
-    titles = []
-    recipe = CoreRecipe()
-    path = path.strip("'").strip('"')
-    doc = recipe.run(path)
-    for section in doc.sections:
-        titles.append(section.text)
-
-    return titles
 
 def evaluate_paper():
     template = """
@@ -106,9 +92,9 @@ Question: {input}
         # )
     ]
 
+    path = load_path()
     section_title_list = fetch_all_section_titles()
-    section_title_str = (", ").join(section_title_list())
-    load_path()
+    section_title_str = ("\n").join(section_title_list)
 
     initial_input = (
         f"Can you please review the the manuscript located at: '{path}'?\n\nHere are the section titles of the manuscript:\n{section_title_str}"
