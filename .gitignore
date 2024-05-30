@@ -1,3 +1,7 @@
 .env
 tools/correct_file.json
 .DS_Store
+agents/__pycache__/__init__.cpython-311.pyc
+agents/__pycache__/paper_evaluate_agent.cpython-311.pyc
+tools/__pycache__/__init__.cpython-311.pyc
+tools/__pycache__/tools.cpython-311.pyc
