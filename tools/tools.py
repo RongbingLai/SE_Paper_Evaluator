@@ -31,28 +31,18 @@ def _fetch_section_content_by_titles(section_title: str) -> str:
     """
     The function fetechs the content of a manuscript section for the given section
     title.
-
-    Parameters:
-        section_title: the title of the manuscript section
-
-    Returns:
-        str: The content of the manuscript section.
-
-    Examples:
-        If the given section title is I.Introduction, then the function will return the content
-        of the Introduction section from the given path:
-        "Good old documentation, the ideal companion of any software system, is intended to provide
-        stakeholders with useful knowledge about the system and related processes...address them."
     """
     content_started = False
     content = ""
     next_index = 0
+    is_last_section = section_title_list.index(section_title) == len(section_title_list) - 1
 
     for page_layout in extract_pages(path):
         for element in page_layout:
             if isinstance(element, LTTextContainer):
                 for text_line in element:
                     line_text = text_line.get_text().strip()
+
                     # records the start of a section
                     if line_text.replace(" ", "") == section_title.replace(" ", ""):
                         content_started = True
@@ -60,14 +50,15 @@ def _fetch_section_content_by_titles(section_title: str) -> str:
                         continue
 
                     # returns the content if reaches the next section title
-                    if content_started and (
-                        line_text.replace(" ", "")
-                        == section_title_list[next_index].replace(" ", "")
-                    ):
-                        return content
-
                     if content_started:
+                        if not is_last_section:
+                            if (
+                                line_text.replace(" ", "")
+                                == section_title_list[next_index].replace(" ", "")
+                            ):
+                                return content
                         content += line_text + "\n"
+
     return content
 
 @tool
@@ -92,8 +83,8 @@ def generate_review(section_title: str) -> str:
         embeddings,
         allow_dangerous_deserialization=True,
     )
-    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 10})
-    llm = OpenAI(temperature=0)
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 8})
+    llm = OpenAI(temperature=0, model='gpt-3.5-turbo-instruct')
     qa = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
@@ -109,18 +100,21 @@ def generate_review(section_title: str) -> str:
         for q in value:
             eval_questions.append(q['Question'])
             for subquestion in q['Subquestions']:
-                result = qa.invoke(subquestion)['result'] # excceed token length
+                result = qa.invoke(subquestion)['result']
                 definitions[subquestion] = result
 
     definitions_str = "\n".join(f"{key}: {value}" for key, value in definitions.items())
     questions_str = "\n".join(q for q in eval_questions)
 
-    chat = ChatOpenAI(temperature=0)
+    chat = ChatOpenAI(temperature=0, model='gpt-4')
 
     template = """
 You are a review committee member at an established software engineering conference. You will be given a section 
 of a manuscruipt along with a list of review questions. While reviewing the section, you need to consider the 
 assessment criteria. You should review whole the section based on the review question and the assessment criteria.
+
+Keep in mind that you must to read the whole section before leaving comments so that you have a comprehensive understanding
+of the section. 
 
 Here is the assessment criteria:
 {definitions_str}
@@ -128,13 +122,13 @@ Here is the assessment criteria:
 Your final result must be a JSON blob structured as below:
 ```
 {{
-"excerpt": $excerpt,
-"comment": $comment
+"Manuscript Text": $manuscript text,
+"Comment": $comment
 }}
 ```
 
-- $excerpt should be the Manuscript Text that you want to leave comment on. Manuscript Text must be from the section content of the manuscript
-- $comment should be a constructive and practical review for the manuscript's author 
+- $Manuscript Text should be a sentence or sentences that you want to leave comment on. Manuscript Text must be from the section content of the manuscript
+- $Comment should be a constructive and practical review for the manuscript's author
 
 
 Please remember to leave comments on all parts of the section that are relevant to the review question.
@@ -170,56 +164,50 @@ Please remember to leave comments on all parts of the section that are relevant 
     )
     return res.content
 
-
-# def _summarize_definition(definition: str) -> str:
-#     llm = OpenAI(temperature=0)
-#     prompt = f"Summarize the following definition:\n\n{definition}"
-#     response = llm.invoke(prompt)
-#     return response
-
 def _get_criteria_questions(section_content: str) -> dict:
-    llm = ChatOpenAI(temperature=0)
+    llm = ChatOpenAI(temperature=0, model="gpt-4")
 
     with open("tools/quality_checklist.json", "r") as file:
         checklist = json.load(file)
 
     template = """
-        You are a review committee member at an established software engineering conference. You will be given 
-        a section of a manuscruipt and a quality checklist that contains questions that review committee member
-        might ask. 
-        
-        Here is the quality checklist: {checklist}. The quality checklist is in Python dictionary format. 
-        The keys are research aspects regarding the manuscript. Each aspect has a list of review questions. 
-        Each element of the list is a dictionary. For each element, key "Question"'s value is the question itself 
-        and key "Subquestions"'s value are subquestions that needed to be answered in order to answer the main question.
+You are a review committee member at an established software engineering conference. You will be given 
+a section of a manuscruipt and a quality checklist that contains questions that review committee member
+might ask. You are reviewing from these aspects:
 
-        For the given section of manuscript, select main questions that are helpful for evaluating the section.
-        Only select the ones that are highly related to the section. Select top 4 questions. If there are less than 4
-        related questions, select them all. Do not select all questions.
-        If there is no question related to this section, then return an empty dictionary. 
-        Return a dictionary that contains all questions in json format. Ignore new line symbols.
+1. Research Question: the question that the manuscript tries to answer or solve.
+
+2. Research Results: describes what the authors found when they 
+analyzed their data. Its primary purpose is to use the data collected to answer the research 
+question(s) posed in the introduction, even if the findings challenge the hypothesis.
+
+3. Research Methodology: the strategies, processes or techniques utilized in the collection of 
+data or evidence for analysis in order to uncover new information or create better understanding 
+of a topic.
+
+4. Research Validation: refers to the process of providing clear and convincing evidence that 
+research results are sound. Validation seeks to demonstrate that the findings are robust and reliable.
+
+5. Research Strategy: how well the manuscript uses an approriate combination of research
+question, results, methodology and validation. 
+
+Here is the quality checklist: 
+{checklist}
+
+The quality checklist is in JSON format. 
+The keys are research aspects regarding the manuscript. Each aspect has a list of review questions. 
+Each element of the list is a dictionary. For each element, key "Question"'s value is the question itself 
+and key "Subquestions"'s value are subquestions that needed to be answered in order to answer the main question.
+
+For the given section of manuscript, select main questions that are helpful for evaluating the section.
+Only select the ones that are highly related to the section. Select top 4 questions. 
+If there are less than 4 related questions, select them all. Do not select all questions.
+For the main question that you select, you must select all of its subquestions.
+
+Return all questions in JSON format. Do not add any other words in this JSON blob.
     """
 
-    # """
-    # You are reviewing from these aspects:
-
-    #     1. Research Question: the question that the manuscript tries to answer or solve.
-
-    #     2. Research Results: describes what the authors found when they 
-    #     analyzed their data. Its primary purpose is to use the data collected to answer the research 
-    #     question(s) posed in the introduction, even if the findings challenge the hypothesis.
-
-    #     3. Research Methodology: the strategies, processes or techniques utilized in the collection of 
-    #     data or evidence for analysis in order to uncover new information or create better understanding 
-    #     of a topic.
-
-    #     4. Research Validation: refers to the process of providing clear and convincing evidence that 
-    #     research results are sound. Validation seeks to demonstrate that the findings are robust and reliable.
-
-    #     5. Research Strategy: how well the manuscript uses an approriate combination of research
-    #     question, results, methodology and validation. """
-
-    human_template = "What questions should be asked to review this section of the manuscript? {section_content}"
+    human_template = "What questions should be asked to review this section of the manuscript? \n\nSection Content: {section_content}"
 
     chat_prompt = ChatPromptTemplate.from_messages(
         [("system", template), ("user", human_template)]
