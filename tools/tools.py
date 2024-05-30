@@ -6,11 +6,8 @@ from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI, ChatOpenAI
 from langchain.tools import tool
 from langchain_core.prompts.chat import ChatPromptTemplate
-from papermage.recipes import CoreRecipe
 from langchain_community.retrievers import BM25Retriever
 import json
-
-section_title_list = []
 
 def load_path():
     global path
@@ -18,30 +15,6 @@ def load_path():
         path = f.read()
 
 load_path()
-
-@tool
-def fetch_all_section_titles() -> list:
-    """
-    This function extracts the titles of all sections.
-
-    Parameters:
-        none
-
-    Returns:
-        list: A list of section titles found in the specified manuscript.
-
-    Example:
-        If the manuscript has sections 'Introduction', 'Literature Review', 'Methodology',
-        the function will return:
-        ['Introduction', 'Literature Review', 'Methodology']
-    """
-    recipe = CoreRecipe()
-    path = path.strip("'").strip('"')
-    doc = recipe.run(path)
-    for section in doc.sections:
-        section_title_list.append(section.text)
-
-    return section_title_list
 
 
 def _fetch_section_content_by_titles(section_title: str) -> str:

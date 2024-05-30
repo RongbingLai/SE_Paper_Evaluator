@@ -3,16 +3,26 @@ from langchain.agents import AgentExecutor
 from langchain_openai import ChatOpenAI, OpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain.agents import create_react_agent
+from papermage.recipes import CoreRecipe
 from tools.tools import (
     generate_review,
-    fetch_all_section_titles,
     get_openreview_reviews
 )
 
 import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-# PAPER_PATH = "/Users/crystalalice/Desktop/ICSHP_Research/SE_paper/Software_Documentation_Issues_Unveiled.pdf"
+PAPER_PATH = "/Users/crystalalice/Desktop/ICSHP_Research/SE_paper/Software_Documentation_Issues_Unveiled.pdf"
+
+def fetch_all_section_titles() -> list:
+    titles = []
+    recipe = CoreRecipe()
+    path = path.strip("'").strip('"')
+    doc = recipe.run(path)
+    for section in doc.sections:
+        titles.append(section.text)
+
+    return titles
 
 def evaluate_paper():
     template = """
@@ -93,45 +103,25 @@ Question: {input}
         # )
     ]
 
+    section_title_list = fetch_all_section_titles()
+    section_title_str = (", ").join(section_title_list())
+
     initial_input = (
-        f"Can you please review the the manuscript located at: '{PAPER_PATH}'?\n\nHere are the section titles of the manuscript:\n{section_titles}"
+        f"Can you please review the the manuscript located at: '{PAPER_PATH}'?\n\nHere are the section titles of the manuscript:\n{section_title_str}"
     )
+    print(initial_input)
 
-    print(os.getenv('OPENAI_API_KEY'))
     llm = OpenAI(temperature=0, model="gpt-3.5-turbo-instruct")
-
-    # memory = ConversationBufferMemory(memory_key="chat_hivstory")
-
-    # prompt = PromptTemplate.from_template(template=template).partial(
-    #     input=initial_input,
-    #     tools=render_text_description(list(tools)),
-    #     tool_names=", ".join([t.name for t in tools]),
-    # )
     
     prompt = PromptTemplate(input_variables=["input", "agent_scratchpad"], template=template)
     print(type(llm))
     agent = create_react_agent(
         llm, tools, prompt, 
-        # output_parser=RobustReActSingleInputOutputParser()
 )
-
-    # llm_with_stop = llm.bind(stop=["\nObservation"])
-
-    # output_parser = ReActSingleInputOutputParser()
-
-    # agent = (
-    #     RunnablePassthrough.assign(
-    #         agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"]),
-    #     )
-    #     | prompt
-    #     | llm_with_stop
-    #     | output_parser
-    # )
 
     agent_chain = AgentExecutor(
         agent=agent,
         tools=tools,
-        # memory=memory,
         verbose=True,
         handle_parsing_errors=True,
     )
