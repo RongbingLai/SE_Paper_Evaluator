@@ -17,6 +17,7 @@ def load_path():
        path = f.read()
     return path
 
+@tool
 def fetch_all_section_titles() -> list:
     global section_title_list
     section_title_list = []
