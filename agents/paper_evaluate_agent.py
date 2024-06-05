@@ -1,7 +1,8 @@
 from langchain_core.tools import Tool
 from langchain.agents import AgentExecutor
-from langchain_openai import ChatOpenAI, OpenAI
+from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
+from criteria_aspect import CriteriaAspect
 from langchain.agents import create_react_agent
 from tools.tools import (
     generate_review,
@@ -15,19 +16,37 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
 def evaluate_paper():
+    ResearchQuestion = CriteriaAspect(1, "Research Question", "the questions that the manuscript tries to answer or solve.")
+    ResearchQuestion.add_question("Are the research question(s) clearly stated by the authors?") # MaryShaw 2003, Thesien 2017, Wohlin 2015
+    ResearchQuestion.add_question("Is the research question related to software engineering?") # Thesien 2017
+    ResearchQuestion.add_question("How novel is the research question?") # MaryShaw 2003, Thesien 2017
+    ResearchQuestion.add_question("How significant is the research question?") # MaryShaw 2003, Thesien 2017
+
+    ResearchResult = CriteriaAspect(2, "Research Result", "what the authors found in the research.")
+    ResearchResult.add_question("What is new in the research result compared to the previous research results?") # MaryShaw 2003
+    ResearchResult.add_question("Are the results presented in this manuscript conrete and specific?") # MaryShaw 2003
+    ResearchResult.add_question("Are there any interesting, novel, exciting results that significantly enhance researchers' ability to develop and maintain software, to know the quality of the software we develop, to recognize general principles about software, or to analyze properties of software?") # MaryShaw 2003
+
+    ResearchValidation = CriteriaAspect(3, "Research Validation", "refers to the process of providing clear and convincing evidence that research results are sound. Validation seeks to demonstrate that the findings are robust and reliable.")
+    ResearchValidation.add_question("Is the evidence presented in the manuscript convincing?") # MaryShaw 2003
+    ResearchValidation.add_question("Are there any research results that do not have concrete evidence supporting the claims made in the manuscript?") # MaryShaw 2003
+
+    ResearchStrategy = CriteriaAspect(4, "Research Strategy", "how well the manuscript uses an approriate combination of research question, results and validation.")
+    ResearchStrategy.add_question("Does the manuscript presents a good combination of research question, result, and validation?") # MaryShaw 2003
+    
     template = (
         "You are a Software Engineering Research Paper committee reviewer from a top conference. "
         # "Your task is to: 1) leave constructive feedback for manusrctipt stated in the user's input 2) To predict its acceptance chance at {conference_name}.\n"
         "Your task is to leave constructive feedback for manusrctipt stated in the user's input. This feedback is directed to the manuscript's author to make modifications and resubmit their manuscript.\n"
         "The reviewing is done from 4 criteria as below:\n"
-        "1. Research Questions: the questions that the manuscript tries to answer or solve. DEFINITION\n" #Criterion
-        "\t1.1: What is the contribution of this manuscript by answering its research questions?" #Question(s) to answer in order to evaluate the manuscript from that criterion  # Cite Marysha 2002
-        "..."
-        ""
-        "2. Research Results: describes what the authors found when they\n"
-        "\t2.1: \n"
-        "5. Results: Results should be specific.\n"
-        "\t 5.1: Are the results presented in this paper considered concrete?"
+        f"{ResearchQuestion}\n"
+        f"{ResearchQuestion.get_all_questions()}\n\n"
+        f"{ResearchResult}\n"
+        f"{ResearchResult.get_all_questions()}\n\n"
+        f"{ResearchValidation}\n"
+        f"{ResearchValidation.get_all_questions()}\n\n"
+        f"{ResearchStrategy}\n"
+        f"{ResearchStrategy.get_all_questions()}\n\n"
         "You will be given a path of the manuscript that needs to be reviewed. Here are some rules when you are reviewing the manuscript:\n"
         "- You should review the manuscript section by section. \n"
         "- You need to complete review all sections before you stop. \n"
@@ -67,6 +86,8 @@ def evaluate_paper():
         "Begin!\n\n{input}\n"
         "{agent_scratchpad}"
     )
+
+    print(template)
 
     #     template = """
     # You are a Software Engineering Research Paper committee reviewer from a top
