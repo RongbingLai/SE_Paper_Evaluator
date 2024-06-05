@@ -24,14 +24,14 @@ def evaluate_paper():
 
     ResearchResult = CriteriaAspect(2, "Research Result", "what the authors found in the research.")
     ResearchResult.add_question("What is new in the research result compared to the previous research results?") # MaryShaw 2003
-    ResearchResult.add_question("Are the results presented in this manuscript conrete and specific?") # MaryShaw 2003
-    ResearchResult.add_question("Are there any interesting, novel, exciting results that significantly enhance researchers' ability to develop and maintain software, to know the quality of the software we develop, to recognize general principles about software, or to analyze properties of software?") # MaryShaw 2003
+    ResearchResult.add_question("Are the results presented in this manuscript concrete and specific?") # MaryShaw 2003
+    ResearchResult.add_question("Are there any interesting, novel, exciting results that significantly enhance researchers' ability to develop and maintain software, to know the quality of the software we develop, to recognize general principles about software, or to analyze the properties of software?") # MaryShaw 2003
 
     ResearchValidation = CriteriaAspect(3, "Research Validation", "refers to the process of providing clear and convincing evidence that research results are sound. Validation seeks to demonstrate that the findings are robust and reliable.")
     ResearchValidation.add_question("Is the evidence presented in the manuscript convincing?") # MaryShaw 2003
     ResearchValidation.add_question("Are there any research results that do not have concrete evidence supporting the claims made in the manuscript?") # MaryShaw 2003
 
-    ResearchStrategy = CriteriaAspect(4, "Research Strategy", "how well the manuscript uses an approriate combination of research question, results and validation.")
+    ResearchStrategy = CriteriaAspect(4, "Research Strategy", "how well the manuscript uses an appropriate combination of research question, results and validation.")
     ResearchStrategy.add_question("Does the manuscript presents a good combination of research question, result, and validation?") # MaryShaw 2003
     
     template = (
