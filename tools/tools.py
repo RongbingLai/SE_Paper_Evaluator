@@ -27,6 +27,16 @@ def fetch_all_section_titles() -> list:
 
     return section_title_list
 
+def create_markdown_string() -> str:
+    markdown_string = ""
+    recipe = CoreRecipe()
+    doc = recipe.run(path)
+    for section_title in doc.sections:
+        markdown_string += '# ' + section_title.text
+        markdown_string += _fetch_section_content_by_titles(section_title)
+
+    return markdown_string
+
 def _fetch_section_content_by_titles(section_title: str) -> str:
     """
     The function fetechs the content of a manuscript section for the given section
