@@ -32,7 +32,7 @@ def create_markdown_string() -> str:
     recipe = CoreRecipe()
     doc = recipe.run(path)
     for section_title in doc.sections:
-        markdown_string += '# ' + section_title.text
+        markdown_string += '# ' + section_title.text + '\n'
         markdown_string += _fetch_section_content_by_titles(section_title.text)
 
     return markdown_string
