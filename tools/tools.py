@@ -33,7 +33,7 @@ def create_markdown_string() -> str:
     doc = recipe.run(path)
     for section_title in doc.sections:
         markdown_string += '# ' + section_title.text
-        markdown_string += _fetch_section_content_by_titles(section_title)
+        markdown_string += _fetch_section_content_by_titles(section_title.text)
 
     return markdown_string
 
@@ -45,11 +45,13 @@ def _fetch_section_content_by_titles(section_title: str) -> str:
     content_started = False
     content = ""
     next_index = 0
+    print(f'searching for {section_title} in list {section_title_list}')
     is_last_section = section_title_list.index(section_title) == len(section_title_list) - 1
 
     for page_layout in extract_pages(path):
         for element in page_layout:
             if isinstance(element, LTTextContainer):
+                print(element)
                 for text_line in element:
                     line_text = text_line.get_text().strip()
 
@@ -293,3 +295,7 @@ def _get_paper_abstract() -> str:
     recipe = CoreRecipe()
     doc = recipe.run(path)
     return doc.titles[0].text + ": " + doc.abstracts[0].text
+
+# Paper should be loaded and section titles should be fetched whenever tools is imported
+load_path()
+fetch_all_section_titles()
