@@ -295,7 +295,3 @@ def _get_paper_abstract() -> str:
     recipe = CoreRecipe()
     doc = recipe.run(path)
     return doc.titles[0].text + ": " + doc.abstracts[0].text
-
-# Paper should be loaded and section titles should be fetched whenever tools is imported
-load_path()
-fetch_all_section_titles()
