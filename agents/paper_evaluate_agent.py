@@ -123,7 +123,6 @@ def evaluate_paper():
 
     agent_chain = AgentExecutor(
         agent=agent,
-        tools=tools,
         verbose=True,
         handle_parsing_errors=True,
     )
