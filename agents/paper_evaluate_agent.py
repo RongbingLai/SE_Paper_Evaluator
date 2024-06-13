@@ -36,7 +36,7 @@ def evaluate_paper():
     ResearchStrategy = CriteriaAspect(4, "Research Strategy", "how well the manuscript uses an appropriate combination of research question, results and validation.")
     ResearchStrategy.add_question("Does the manuscript presents a good combination of research question, result, and validation?") # MaryShaw 2003
     
-    initial_template = (
+    template = (
         "You are a Software Engineering Research Paper committee reviewer from a top conference. "
         # "Your task is to: 1) leave constructive feedback for manusrctipt stated in the user's input 2) To predict its acceptance chance at {conference_name}.\n"
         "Your task is to leave constructive feedback for manusrctipt stated in the user's input. This feedback is directed to the manuscript's author to make modifications and resubmit their manuscript.\n"
@@ -77,21 +77,12 @@ def evaluate_paper():
         "... (this Section Title/Criterion/Review loop must be repeated as many times as needed to review all the sections and cover all evalaution criteria)\n"
         "Finally, you must review all the section reviews that you have left and"
         "Begin!\n\n Can you please review the following manuscript?\n{manuscript}\n"
-        "Section Title: {section_title}\n"
-        "Criterion: {criterion}\n"
-        "Review: " 
+        "Section Title: {section_title}"
+        "Criterion: {criterion}" 
         "{agent_scratchpad}"
     )
 
-    subsequent_template = (
-        "Section Title: {section_title}\n"
-        "Criterion: {criterion}\n"
-        "Review: " 
-        "{agent_scratchpad}"
-    )
-
-    print(initial_template)
-    print(subsequent_template)
+    print(template)
 
     path = load_path()
     section_title_list = fetch_all_section_titles()
@@ -99,26 +90,15 @@ def evaluate_paper():
 
     llm = OpenAI(temperature=0, model="gpt-4o")  # gpt-4o
 
-    initial_prompt = PromptTemplate(
-        input_variables=["manuscript", "section_title", "criterion", "agent_scratchpad"],
-        initial_template=initial_template,
+    prompt = PromptTemplate(
+        input_variables=["manuscript", "agent_scratchpad"], template=template
     )
-
-    subsequent_prompt = PromptTemplate(
-        input_variables=["section_title", "criterion", "agent_scratchpad"],
-        initial_template=subsequent_prompt,
-    )
-
-    # agent = create_react_agent(
-    #     llm,
-    #     tools,
-    #     prompt,
-    # )
 
     agent = create_custom_react_agent(
         llm,
-        initial_prompt,
-        subsequent_prompt
+        section_title_list,
+        criteria_list=[ResearchQuestion, ResearchResult, ResearchValidation, ResearchStrategy],
+        prompt=prompt,
     )
 
     agent_chain = AgentExecutor(
