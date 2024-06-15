@@ -26,7 +26,7 @@ def create_custom_react_agent(
     stop_sequence: Union[bool, List[str]] = True,
 ) -> Runnable:
     # Check for missing variables in the prompt
-    missing_vars = {"manuscript", "agent_scratchpad", "section_title", "criterion", "criteria_descriptions"}.difference(
+    missing_vars = {"manuscript", "agent_scratchpad", "section_title", "criterion"}.difference(
         prompt.input_variables + list(prompt.partial_variables)
     )
     if missing_vars:
@@ -50,7 +50,7 @@ def create_custom_react_agent(
     # Initialize comments.csv to contain results
     with open('comments.csv', mode='w+', newline='') as output_file:
         writer=csv.writer(output_file)
-        writer.writerow(['Section Title', 'Criterion', 'Response'])
+        writer.writerow(['Section Title', 'Criterion', 'Review'])
 
     def write_to_csv(data):
         with open('comments.csv', mode='a', newline='') as output_file:
