@@ -14,7 +14,7 @@ from langchain.tools.render import ToolsRenderer, render_text_description
 
 from criteria_aspect import CriteriaAspect
 
-import csv
+import pandas as pd
 
 
 def create_custom_react_agent(
@@ -47,15 +47,17 @@ def create_custom_react_agent(
         agent_scratchpad=""
     )
 
-    # Initialize comments.csv to contain results
-    with open('comments.csv', mode='w+', newline='') as output_file:
-        writer=csv.writer(output_file)
-        writer.writerow(['Section Title', 'Criterion', 'Review'])
+    # Initialize comments DataFrame to contain results
+    comments_df = pd.DataFrame(columns=['Section Title', 'Criterion', 'Review'])
 
-    def write_to_csv(data):
-        with open('comments.csv', mode='a', newline='') as output_file:
-            writer = csv.writer(output_file)
-            writer.writerow([data['section_title'], data['criterion'], data['response']])
+    def write_to_df(data):
+        nonlocal comments_df
+        comments_df = comments_df.append({
+            'Section Title': data['section_title'],
+            'Criterion': data['criterion'],
+            'Review': data['response']
+        }, ignore_index=True)
+        comments_df.to_csv('comments.csv', index=False)
 
     # Iterate through sections and criteria
     for section_title in section_title_list:
@@ -72,6 +74,6 @@ def create_custom_react_agent(
                     agent_scratchpad=lambda x: x["agent_scratchpad"] + x.get("response", "")
                 )
 
-                write_to_csv(agent)
+                write_to_df(agent)
 
     return agent
